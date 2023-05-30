@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>ECharts</title>
+    <!-- 引入刚刚下载的 ECharts 文件 -->
+    <script src="./static/echarts.min.js"></script>
+    <script src="./static/echarts-gl.min.js"></script>
+</head>
+
+<body>
+    <!-- 为 ECharts 准备一个定义了宽高的 DOM -->
+    <div id="main" style="width: 600px;height:400px;">
+    </div>
+    <script type="text/javascript">
+var myChart = echarts.init(document.getElementById('main'));
+        // 指定图表的配置项和数据
+       function makeGaussian(amplitude, x0, y0, sigmaX, sigmaY) {
+    return function (amplitude, x0, y0, sigmaX, sigmaY, x, y) {
+        var exponent = -(
+                ( Math.pow(x - x0, 2) / (2 * Math.pow(sigmaX, 2)))
+                + ( Math.pow(y - y0, 2) / (2 * Math.pow(sigmaY, 2)))
+            );
+        return amplitude * Math.pow(Math.E, exponent);
+    }.bind(null, amplitude, x0, y0, sigmaX, sigmaY);
+}
+// 创建一个高斯分布函数
+var gaussian = makeGaussian(50, 0, 0, 20, 20);
+var data = [];
+for (var i = 0; i < 1000; i++) {
+    // x, y 随机分布
+    var x = Math.random() * 100 - 50;
+    var y = Math.random() * 100 - 50;
+    var z = gaussian(x, y);
+    data.push([x, y, z]);
+}
+option = {
+    grid3D: {},
+    xAxis3D: {},
+    yAxis3D: {},
+    zAxis3D: { max: 100 },
+    series: [{
+        type: 'scatter3D',
+        data: data
+    }]
+}
+        myChart.setOption(option);
+    </script>
+</body>
+
+</html>

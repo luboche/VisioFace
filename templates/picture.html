@@ -1,0 +1,84 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="icon" href="{{ url_for('static', filename='tubiao.png') }}">
+    <meta charset="utf-8" />
+    <title>{{ before }}'s Watchlist</title>
+    <meta charset="UTF-8">
+    <script src="./static/echarts.min.js"></script>
+    <script src="./static/echarts-gl.min.js"></script>
+<script>
+    var getUserPhoto = document.getElementById("input_img");
+    getUserPhoto.onchange = function ()
+    {
+        var file = this.files;
+        console.log(file);
+        var reader = new FileReader();
+        reader.readAsDataURL(file[0]);
+        reader.onload = function ()
+        {
+            var image = document.getElementById("show_img");
+            image.src = reader.result;
+        };
+     };
+</script>
+</head>
+<body>
+<form action="/getImg/" method="post" enctype="multipart/form-data">
+	<label for="">请上传图片:</label>
+	<input type="file" name="image"><br>
+	<input type="submit" value="提交">
+</form>
+<script>
+  function changepic(obj) {
+    //console.log(obj.files[0]);//这里可以获取上传文件的name
+
+    var newsrc = getObjectURL(obj.files[0])
+
+    document.getElementById('show').src = newsrc
+  }
+
+  //建立一個可存取到該file的url
+  function getObjectURL(file) {
+    var url = null
+    if (window.createObjectURL != undefined) {
+      // basic
+      url = window.createObjectURL(file)
+    } else if (window.URL != undefined) {
+      // mozilla(firefox)
+      url = window.URL.createObjectURL(file)
+    } else if (window.webkitURL != undefined) {
+      // webkit or chrome
+      url = window.webkitURL.createObjectURL(file)
+    }
+
+    return url
+  }
+</script>
+<div id="main" style="width: 600px;height:400px;">
+    </div>
+    <script type="text/javascript">
+
+var myChart = echarts.init(document.getElementById('main'));
+        // 指定图表的配置项和数据
+var data = {{ data }};
+option = {
+    grid3D: {},
+    xAxis3D: {},
+    yAxis3D: {},
+    zAxis3D: {},
+    series: [{
+        type: 'scatter3D',
+        data: data
+    }]
+}
+        myChart.setOption(option);
+    </script>
+
+
+</body>
+</html>
+
+
+
