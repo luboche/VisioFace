@@ -2,6 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" type="text/css">
     <link rel="icon" href="{{ url_for('static', filename='tubiao.png') }}">
     <meta charset="utf-8" />
     <title>{{ before }}'s Watchlist</title>
@@ -25,11 +26,16 @@
 </script>
 </head>
 <body>
+<br></br>
+<br></br>
+<center>
 <form action="/getImg/" method="post" enctype="multipart/form-data">
-	<label for="">请上传图片:</label>
-	<input type="file" name="image"><br>
-	<input type="submit" value="提交">
+	<label >请上传图片:</label>
+	<input type="file" name="image" align="center" ><br>
+    <br></br>
+	<input type="submit" value="提交" align="center" class="btn1">
 </form>
+    </center>
 <script>
   function changepic(obj) {
     //console.log(obj.files[0]);//这里可以获取上传文件的name
@@ -56,7 +62,7 @@
     return url
   }
 </script>
-<div id="main" style="width: 600px;height:400px;">
+<div id="main" style="width: 600px;height:400px;" align="center">
     </div>
     <script type="text/javascript">
 

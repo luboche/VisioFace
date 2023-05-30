@@ -203,62 +203,27 @@ class PoseEstimator:
 
     def solve_pose_by_68_points(self, image_points):
         judge, rotation_vector, translation_vector = cv2.solvePnP(
-            self.model_points_68,
-            image_points,
-            self.camera_matrix,
-            self.dist_coeefs,
-            rvec=self.r_vec,
-            tvec=self.t_vec,
-            useExtrinsicGuess=True)
+            self.model_points_68,  # 68关键点三维坐标
+            image_points,  # 68关键点 x，y坐标
+            self.camera_matrix,  # 相机内参
+            self.dist_coeefs,  # 相机内参
+            rvec=self.r_vec,  # 旋转矩阵 起始搜素位置
+            tvec=self.t_vec,  # 位移矩阵 起始搜索
+            useExtrinsicGuess=True)  # 使用给定值搜索
         if judge:
             self.r_vec = rotation_vector
             self.t_vec = translation_vector
-            return rotation_vector, translation_vector
+            return rotation_vector, translation_vector  # 分别返回solvePnP得到的旋转矩阵和位移矩阵
         else:
             return [0, 0, 0], 0
 
-    def draw_annotation_box(self, image, rotation_vector, translation_vector, color=(255, 255, 255), line_width=2):
-        """Draw a 3D box as annotation of pose"""
-        point_3d = []
-        rear_size = 75
-        rear_depth = 0
-        point_3d.append((-rear_size, -rear_size, rear_depth))
-        point_3d.append((-rear_size, rear_size, rear_depth))
-        point_3d.append((rear_size, rear_size, rear_depth))
-        point_3d.append((rear_size, -rear_size, rear_depth))
-        point_3d.append((-rear_size, -rear_size, rear_depth))
 
-        front_size = 100
-        front_depth = 100
-        point_3d.append((-front_size, -front_size, front_depth))
-        point_3d.append((-front_size, front_size, front_depth))
-        point_3d.append((front_size, front_size, front_depth))
-        point_3d.append((front_size, -front_size, front_depth))
-        point_3d.append((-front_size, -front_size, front_depth))
-        point_3d = np.array(point_3d, dtype=np.float).reshape(-1, 3)
-
-        # Map to 2d image points
-        (point_2d, _) = cv2.projectPoints(point_3d,
-                                          rotation_vector,
-                                          translation_vector,
-                                          self.camera_matrix,
-                                          self.dist_coeefs)
-        point_2d = np.int32(point_2d.reshape(-1, 2))
-
-        # Draw all the lines
-        cv2.polylines(image, [point_2d], True, color, line_width, cv2.LINE_AA)
-        cv2.line(image, tuple(point_2d[1]), tuple(
-            point_2d[6]), color, line_width, cv2.LINE_AA)
-        cv2.line(image, tuple(point_2d[2]), tuple(
-            point_2d[7]), color, line_width, cv2.LINE_AA)
-        cv2.line(image, tuple(point_2d[3]), tuple(
-            point_2d[8]), color, line_width, cv2.LINE_AA)
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Testing')
     parser.add_argument('--model_path',
-                        default="./checkpoint/snapshot/checkpoint_epoch_500.pth.tar",
+                        default="./checkpoint/snapshot/checkpoint.pth.tar",
                         type=str)
     args = parser.parse_args()
     return args
@@ -522,6 +487,7 @@ def progress():
             yield "data:" + ratio + "\n\n"
             ratio = get_video_data()
             time.sleep(0.5)
+
     return Response(generate(), mimetype='text/event-stream')
 
 

@@ -1,6 +1,8 @@
 <!doctype html>
 <html lang="en">
 <head>
+    <link rel="icon" href="{{ url_for('static', filename='tubiao.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" type="text/css">
     <title>GET VIDEO</title>
     <meta charset="utf-8">
     <script src="{{ url_for('static', filename='js/jquery-1.7.1.min.js') }}"></script>
@@ -9,12 +11,12 @@
     <script src="./static/echarts-gl.min.js"></script>
 </head>
 <body>
-<input type="button" title="开启摄像头" value="开启摄像头" onclick="getMedia()" />
+<input type="button"  class="btn1" title="开启摄像头" value="开启摄像头" onclick="getMedia()" />
 <video id="video" width="500px" height="500px" autoplay="autoplay"></video>
 <canvas id="canvas" width="500px" height="500px"></canvas>
-<button id="snap" onclick="takePhoto()">拍照</button>
-<button id="close" onclick="closeMedia()">关闭</button>
-<button id="upload" onclick="uploadImage()">上传</button>
+<button id="snap"  class="btn1" onclick="takePhoto()">拍照</button>
+<button id="close"  class="btn1" onclick="closeMedia()">关闭</button>
+<button id="upload"  class="btn1" onclick="uploadImage()">上传</button>
 
 <div id="main" style="width: 600px;height:400px;">
     </div>
@@ -128,6 +130,18 @@ option = {
     series: [{
         type: 'scatter3D',
         data: ans
+        ,
+        symbolSize: 12,
+        // symbol: 'triangle',
+        itemStyle: {
+          borderWidth: 1,
+          borderColor: 'rgba(255,255,255,0.8)'
+        },
+        emphasis: {
+          itemStyle: {
+            color: '#fff'
+          }
+        }
     }]
 }
         myChart.setOption(option);
