@@ -18,7 +18,23 @@ footer {
 .avatar {
     width: 40px;
 }
+.button-container {
+  display: flex;
+  justify-content: center;
+}
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 80vh; /* 可根据需要调整容器的高度 */
+}
 
+.container > * {
+  margin: 10px; /* 可根据需要调整元素之间的间距 */
+}
+.button-container button {
+  margin: 0 10px;
+}
 /* 电影列表 */
 .movie-list {
     list-style-type: none;
@@ -55,7 +71,7 @@ footer {
       padding: 16px 32px;
       text-align: center;
       display: inline-block;
-      font-size: 16px;
+      font-size: 50px;
       margin: 4px 2px;
       -webkit-transition-duration: 0.4s; /* Safari */
       transition-duration: 0.4s;
@@ -66,8 +82,20 @@ footer {
 .btn1 {
       background-color: white;
       color: black;
+      font-size: 18px;
       border: 2px solid #008CBA;
 
+}
+.picturemain{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+
+  }
+input[type="button"] {
+  display: block;
+  margin: 0 auto;
 }
 /* 悬停样式 */
 .btn1:hover {
@@ -110,7 +138,15 @@ footer {
     //设置初始状态
     transition: 0s;
 }
+.mainziti{
+    font-family: Arial, sans-serif;
+    font-size: 45px;
+    font-weight: bold;
+    color: #97694F;
+    text-transform: uppercase;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 
+  }
 .niceButton2{
             position: relative;
             background-color: rgb(32, 93, 224);

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:class="http://www.w3.org/1999/xhtml">
 <head>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" type="text/css">
     <link rel="icon" href="{{ url_for('static', filename='tubiao.png') }}">
@@ -17,12 +17,11 @@
     </script>
 </head>
 <body>
-<br></br>
-<br></br>
-<br></br>
-
-<br></br>
-<h1 align="center">请选择图片或视频</h1>
+<picture class="picturemain" >
+  <source type="image/webp" srcset="static\gif2.webp">
+  <img class="image" src="static\gif1.webp" width="600px" >
+</picture>
+<h1 align="center" class="mainziti">请选择图片或视频</h1>
 <!--<form>-->
 <!--    <input type="search">-->
 <!--</form>-->
@@ -49,7 +48,10 @@
 <!--<input type="button" value="调用摄像头识别" onclick="video()"/>-->
     </form>
 
-
+<picture class="picturemain" >
+  <source type="image/webp" srcset="static\gif1.webp">
+  <img class="image" src="static\gif1.webp" height="300px" width="600px">
+</picture>
 </body>
 </html>
 
