@@ -1,7 +1,7 @@
 import base64
 import time
 from flask import Flask, render_template, request, Response, stream_with_context
-from flask import abort, redirect, url_for
+from flask import redirect, url_for
 import argparse
 import numpy as np
 import cv2
@@ -484,9 +484,9 @@ def progress():
     def generate():
         ratio = get_video_data()  #
         while 1:
-            yield "data:" + ratio + "\n\n"
+            yield "data:" + ratio + "\n\n"  #yield语句 第一次之后的每次调用从此处开始
             ratio = get_video_data()
-            time.sleep(0.5)
+            time.sleep(0.5)  #用来设置读取摄像头周期
 
     return Response(generate(), mimetype='text/event-stream')
 
