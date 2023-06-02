@@ -1,25 +1,27 @@
-import base64
-import time
-from flask_login import UserMixin, current_user
-from flask_login import LoginManager, login_user
-from flask import Flask, render_template, request, Response, stream_with_context, flash
-from werkzeug.security import generate_password_hash, check_password_hash
-from flask import redirect, url_for
-from flask_sqlalchemy import SQLAlchemy
 import argparse
-import numpy as np
-import cv2
-import uuid
-import math
+import base64
 import json
-from math import *
-import os
 import math
+import os
+import sys
+import time
+import uuid
+from math import *
+
+import cv2
+import numpy as np
 import torch
 import torchvision
+from flask import Flask, render_template, request, Response, stream_with_context
+from flask import redirect, url_for
+from flask_login import LoginManager, login_user
+from flask_login import current_user
+from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash
+
 from models.pfld import PFLDInference, AuxiliaryNet
 from mtcnn.detector import detect_faces
-import sys
+
 # 创建应用程序
 videodata = []
 USERS = [
