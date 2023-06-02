@@ -1,10 +1,15 @@
 import base64
 import time
-from flask import Flask, render_template, request, Response, stream_with_context
+from flask_login import UserMixin, current_user
+from flask_login import LoginManager, login_user
+from flask import Flask, render_template, request, Response, stream_with_context, flash
+from werkzeug.security import generate_password_hash, check_password_hash
 from flask import redirect, url_for
+from flask_sqlalchemy import SQLAlchemy
 import argparse
 import numpy as np
 import cv2
+import uuid
 import math
 import json
 from math import *
@@ -14,10 +19,21 @@ import torch
 import torchvision
 from models.pfld import PFLDInference, AuxiliaryNet
 from mtcnn.detector import detect_faces
-
+import sys
 # 创建应用程序
 videodata = []
-
+USERS = [
+    {
+        "id": 1,
+        "name": 'lily',
+        "password": generate_password_hash('123')
+    },
+    {
+        "id": 2,
+        "name": 'tom',
+        "password": generate_password_hash('123')
+    }
+]
 
 class PoseEstimator:
     """Estimate head pose according to the facial landmarks"""
@@ -228,10 +244,37 @@ def parse_args():
                         type=str)
     args = parser.parse_args()
     return args
+def create_user(user_name, password):
+    """创建一个用户"""
+    user = {
+        "name": user_name,
+        "password": generate_password_hash(password),
+        "id": uuid.uuid4()
+    }
+    USERS.append(user)
 
+def get_user(user_name):
+    """根据用户名获得用户记录"""
+    for user in USERS:
+        if user.get("name") == user_name:
+            return user
+    return None
+WIN = sys.platform.startswith('win')
+if WIN:  # 如果是 Windows 系统，使用三个斜线
+    prefix = 'sqlite:///'
+else:  # 否则使用四个斜线
+    prefix = 'sqlite:////'
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 app = Flask(__name__)
+app.secret_key = 'abc'
+app.config['SQLALCHEMY_DATABASE_URI'] = prefix + os.path.join(app.root_path, 'data.db')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # 关闭对模型修改的监控
+# 在扩展类实例化前加载配置
+login_manager = LoginManager()  # 实例化登录管理对象
+login_manager.init_app(app)  # 初始化应用
+login_manager.login_view = 'login'
+db = SQLAlchemy(app)
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 args = parse_args()
 checkpoint = torch.load(args.model_path, map_location=device)
 pfld_backbone = PFLDInference().to(device)
@@ -242,8 +285,60 @@ pfld_backbone.eval()
 auxiliarynet.eval()
 pfld_backbone = pfld_backbone.to(device)
 auxiliarynet = auxiliarynet.to(device)
+from flask_login import UserMixin  # 引入用户基类
+from werkzeug.security import check_password_hash
+# ...
+class User(UserMixin):
+    """用户类"""
+    def __init__(self, user):
+        self.username = user.get("name")
+        self.password_hash = user.get("password")
+        self.id = user.get("id")
+
+    def verify_password(self, password):
+        """密码验证"""
+        if self.password_hash is None:
+            return False
+        return check_password_hash(self.password_hash, password)
+
+    def get_id(self):
+        """获取用户ID"""
+        return self.id
+
+    @staticmethod
+    def get(user_id):
+        """根据用户ID获取用户实体，为 login_user 方法提供支持"""
+        if not user_id:
+            return None
+        for user in USERS:
+            if user.get('id') == user_id:
+                return User(user)
+        return None
+
+# class User(db.Model,UserMixin):
+#     id = db.Column(db.Integer, primary_key=True)
+#     name = db.Column(db.String(20))
+#     username = db.Column(db.String(20))  # 用户名
+#     password_hash = db.Column(db.String(128))  # 密码散列值
+#
+#     def set_password(self, password):  # 用来设置密码的方法，接受密码作为参数
+#         self.password_hash = generate_password_hash(password)  # 将生成的密码保持到对应字段
+#
+#     def validate_password(self, password):  # 用于验证密码的方法，接受密码作为参数
+#         return check_password_hash(self.password_hash, password)  # 返回布尔值
+
+# db.drop_all()
+# db.create_all()
+# user = User()
+# user.set_password("fuck")
+# db.session.add(user)
 
 
+
+
+# user = User.query.first()
+# print(user)
+# print(user.username)
 def mymodel(args, picture):
     time1 = time.perf_counter()
     print(1, time1)
@@ -465,14 +560,53 @@ def mymodel(args, picture):
 
 def get_video_data():
     global args
-    if os.path.exists('rev_image.jpg'):
-        pic = cv2.imread('rev_image.jpg')
-        data = mymodel(args, pic)
-        temp = [str((i1)) for i2 in data for i1 in i2]
-        retemp = '*'.join(temp)
-        return retemp
-    return []
+    lujing = 'static/upload/' + current_user.username + 'video.jpg'
+    if os.path.exists(lujing):
+        pic = cv2.imread(lujing)
+    else:
+        pic = cv2.imread('static/upload/init.jpg')
+    data = mymodel(args, pic)
+    temp = [str((i1)) for i2 in data for i1 in i2]
+    retemp = '*'.join(temp)
+    return retemp
 
+
+@login_manager.user_loader
+def load_user(user_id):  # 创建用户加载回调函数，接受用户 ID 作为参数
+    return User.get(user_id)
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        user_info =get_user(username)
+        if user_info is None:
+            emsg = "用户名或密码密码有误"
+            return redirect(url_for('login'))
+        else:
+            user = User(user_info)
+            login_user(user)
+            return redirect(url_for('main'))  # 重定向到主页
+        # if not username or not password:
+        #     flash('Invalid input.')
+        #     return redirect(url_for('login'))
+        #
+        # # user = User.query.first()
+        # # print(user)
+        # # print(user.username)
+        # # 验证用户名和密码是否一致
+        # user = User('lily')
+        # if 1:
+        #     login_user(user)  # 登入用户
+        #     flash('Login success.')
+        #     return redirect(url_for('main'))  # 重定向到主页
+        #
+        # flash('Invalid username or password.')  # 如果验证失败，显示错误消息
+        # return redirect(url_for('login'))  # 重定向回登录页面
+
+    return render_template('login.html')
 
 @app.errorhandler(404)  # 传入要处理的错误代码
 def page_not_found(e):  # 接受异常对象作为参数
@@ -501,36 +635,42 @@ def receive_image():
         img = base64.b64decode(str_image)
         img_np = np.frombuffer(img, dtype='uint8')
         new_img_np = cv2.imdecode(img_np, 1)
-        cv2.imwrite('rev_image.jpg', new_img_np)
+        lujing = 'static/upload/' + current_user.username + 'video.jpg'
+        cv2.imwrite(lujing, new_img_np)
     return Response('upload')
 
 
 @app.route('/picture', methods=['POST', 'GET'])
 def picture():
     global args
-    if os.path.exists('aaa.jpg'):
+    lujing = 'static/upload/'+current_user.username+'picture.jpg'
+    # if os.path.exists('/static/upload/picture.jpg'):
+    if os.path.exists(lujing):
+
         pic = cv2.imread('aaa.jpg')
         data = mymodel(args, pic)
         return render_template('picture.html', before=1, data=data)
-    return render_template('picture.html', before=0, data=[])
+    return render_template('picture.html', before=0, data=[],name =current_user.username)
 
 
 @app.route('/getImg/', methods=['GET', 'POST'])
 def getImg():
     imgData = request.files["image"]
-    imgName = imgData.filename
-    imgData.save('aaa.jpg')
-    url = '/static/upload/img/' + imgName
+    lujing = 'static/upload/' + current_user.username + 'picture.jpg'
+    # imgName = '/static/upload/'+'picture.jpg'
+    imgData.save(lujing)
+    # url = '/static/upload/img/' + imgName
     return redirect(url_for('picture'))
 
 
 @app.route('/video')
 def video():
-    return render_template('video.html')
+    return render_template('video.html',name = current_user.username)
 
 
 @app.route('/main', methods=['GET', 'POST'])
 def main():
+    print(current_user.username)
     if request.method == 'POST':
         temp = request.form.get('choice')
 
@@ -543,7 +683,7 @@ def main():
 
 @app.route('/')
 def index():
-    return redirect(url_for('main'))  # 重定向到
+    return redirect(url_for('login'))  # 重定向到
 
 
 if __name__ == "__main__":
