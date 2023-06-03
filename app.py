@@ -1,26 +1,26 @@
-import argparse
 import base64
-import json
-import math
-import os
-import sys
 import time
-import uuid
-from math import *
-
-import cv2
+from flask_login import UserMixin, current_user
+from flask_login import LoginManager, login_user
+from flask import Flask, render_template, request, Response, stream_with_context, flash
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask import redirect, url_for
+from flask_sqlalchemy import SQLAlchemy
+import argparse
 import numpy as np
+import cv2
+import uuid
+import math
+import json
+from math import *
+import os
+import math
 import torch
 import torchvision
-from flask import Flask, render_template, request, Response, stream_with_context
-from flask import redirect, url_for
-from flask_login import LoginManager, login_user
-from flask_login import current_user
-from flask_sqlalchemy import SQLAlchemy
-from werkzeug.security import generate_password_hash
-
 from models.pfld import PFLDInference, AuxiliaryNet
 from mtcnn.detector import detect_faces
+import sys
+from sort_master import Sort
 
 # 创建应用程序
 videodata = []
@@ -357,8 +357,11 @@ def mymodel(args, picture):
     pose_estimator = PoseEstimator(img_size=img.shape)
     time2 = (time.perf_counter())
     print(2, time2)
-    for box in bounding_boxes:
 
+    fps = 3 # 帧率，最好可以改成实际帧率
+    mot_tracker = Sort(max_age=2 * int(fps), iou_threshold=0.5) # 多目标跟踪器
+    det = []
+    for box in bounding_boxes:
         x1, y1, x2, y2 = (box[:4] + 0.5).astype(np.int32)
         w = x2 - x1 + 1
         h = y2 - y1 + 1
@@ -377,8 +380,19 @@ def mymodel(args, picture):
         edy1 = max(0, -y1)
         edx2 = max(0, x2 - width)
         edy2 = max(0, y2 - height)
+        bounding_box = [x1, y1, x2, y2, box[4] * 100]
+        det.append(bounding_box)
         time25 = (time.perf_counter())
         print(2.5, time25)
+
+    det = np.array(det).reshape(-1, 5)
+    trackers = mot_tracker.update(image=img, dets=det, cmc=False, bad_frame=[], metrix='giou')
+    for t, trk in enumerate(trackers):
+        x1, y1, x2, y2 = (trk[:4] + 0.5).astype(np.int32)
+        x1 = max(0, x1)
+        y1 = max(0, y1)
+        x2 = min(width, x2)
+        y2 = min(height, y2)
         cropped = img[y1:y2, x1:x2]  # 人脸剪切
         if (edx1 > 0 or edy1 > 0 or edx2 > 0 or edy2 > 0):
             cropped = cv2.copyMakeBorder(cropped, edy1, edy2, edx1, edx2,
