@@ -261,21 +261,28 @@ def get_user(user_name):
         if user.get("name") == user_name:
             return user
     return None
+
+
+
+
+#---------init_app
 WIN = sys.platform.startswith('win')
 if WIN:  # 如果是 Windows 系统，使用三个斜线
     prefix = 'sqlite:///'
 else:  # 否则使用四个斜线
     prefix = 'sqlite:////'
-
 app = Flask(__name__)
 app.secret_key = 'abc'
 app.config['SQLALCHEMY_DATABASE_URI'] = prefix + os.path.join(app.root_path, 'data.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # 关闭对模型修改的监控
 # 在扩展类实例化前加载配置
+
 login_manager = LoginManager()  # 实例化登录管理对象
 login_manager.init_app(app)  # 初始化应用
 login_manager.login_view = 'login'
 db = SQLAlchemy(app)
+db.create_all()
+#---------init_model
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 args = parse_args()
 checkpoint = torch.load(args.model_path, map_location=device)
@@ -287,8 +294,7 @@ pfld_backbone.eval()
 auxiliarynet.eval()
 pfld_backbone = pfld_backbone.to(device)
 auxiliarynet = auxiliarynet.to(device)
-from flask_login import UserMixin  # 引入用户基类
-from werkzeug.security import check_password_hash
+print('fuck')
 # ...
 class User(UserMixin):
     """用户类"""
@@ -338,9 +344,9 @@ class User(UserMixin):
 
 
 
-# user = User.query.first()
-# print(user)
-# print(user.username)
+#-------------------
+#param：input picture
+#output: 3D coordinate set
 def mymodel(args, picture):
     time1 = time.perf_counter()
     print(1, time1)
@@ -399,6 +405,7 @@ def mymodel(args, picture):
                                          cv2.BORDER_CONSTANT, 0)
         time26 = (time.perf_counter())
         print(2.6, time26)
+
         input = cv2.resize(cropped, (112, 112))  # 固定大小
         input = transform(input).unsqueeze(0).to(device)
         features, landmarks = pfld_backbone(input)
@@ -573,7 +580,8 @@ def mymodel(args, picture):
 
     return point.tolist()
 
-
+#-----------------
+#output: Encoded 3D coordinate sets
 def get_video_data():
     global args
     lujing = 'static/upload/' + current_user.username + 'video.jpg'
@@ -603,8 +611,11 @@ def login():
             return redirect(url_for('login'))
         else:
             user = User(user_info)
-            login_user(user)
-            return redirect(url_for('main'))  # 重定向到主页
+            if user.verify_password(password):
+                login_user(user)
+                return redirect(url_for('main'))  # 重定向到主页
+            else:
+                return redirect(url_for('login'))
         # if not username or not password:
         #     flash('Invalid input.')
         #     return redirect(url_for('login'))
@@ -624,11 +635,14 @@ def login():
 
     return render_template('login.html')
 
+#--------------------
+#error page
 @app.errorhandler(404)  # 传入要处理的错误代码
 def page_not_found(e):  # 接受异常对象作为参数
     return render_template('404.html'), 404  # 返回模板和状态码
 
-
+#--------------------
+#routing control
 @app.route('/progress')  #
 def progress():
     @stream_with_context
@@ -673,9 +687,7 @@ def picture():
 def getImg():
     imgData = request.files["image"]
     lujing = 'static/upload/' + current_user.username + 'picture.jpg'
-    # imgName = '/static/upload/'+'picture.jpg'
     imgData.save(lujing)
-    # url = '/static/upload/img/' + imgName
     return redirect(url_for('picture'))
 
 
@@ -689,7 +701,6 @@ def main():
     print(current_user.username)
     if request.method == 'POST':
         temp = request.form.get('choice')
-
         if temp == "picture":
             return redirect(url_for('picture'))
         elif temp == "video":
@@ -702,5 +713,5 @@ def index():
     return redirect(url_for('login'))  # 重定向到
 
 
-if __name__ == "__main__":
-    app.run(debug=True)  # 启动应用程序，不
+
+app.run(debug=True)  # 启动应用程序，不
