@@ -282,13 +282,13 @@ class User(db.Model, UserMixin):
 
     def set_password(self, password):  # 用来设置密码的方法，接受密码作为参数
         self.password_hash = generate_password_hash(password)  # 将生成的密码保持到对应字段
-
     # def get_id(self):
     #     """获取用户ID"""
     #     return self.id
 
     def validate_password(self, password):  # 用于验证密码的方法，接受密码作为参数
         return check_password_hash(self.password_hash, password)  # 返回布尔值
+
 
 # def __repr__(self):
 #     return '<User %r>' % self.username
@@ -561,23 +561,38 @@ def load_user(user_id):
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        # tryuser = User.query.filter_by(username=username).all()
-        user = User.query.filter_by(username=username).first()
+        if request.form['choice'] == 'signin':
+            username = request.form['username']
+            password = request.form['password']
+            # tryuser = User.query.filter_by(username=username).all()
+            user = User.query.filter_by(username=username).first()
+            # 验证用户名和密码是否一致
+            # print('tryuser::::::::::;',tryuser)
+            if user and username == user.username and user.validate_password(password):
+                login_user(user)
+                flash('Login success.')
+                return redirect(url_for('main'))  # 重定向到主页
+            else:
+                flash('Invalid username or password.')
+                return render_template('login.html', sign='无效用户名或密码')
 
-        # 验证用户名和密码是否一致
+        if request.form['choice'] == 'signup':
+            username = request.form['username']
+            password = request.form['password']
+            # tryuser = User.query.filter_by(username=username).all()
+            user = User.query.filter_by(username=username).first()
+            if user:
+                print('该用户名已被注册')
+                return render_template('login.html', sign='该用户名已被注册！')
+            else:
+                user = User()
+                user.username=username
+                user.set_password(password)
+                db.session.add(user)
+                db.session.commit()
+                return render_template('login.html', sign='注册成功！')
 
-        # print('tryuser::::::::::;',tryuser)
-        if user and username == user.username and user.validate_password(password):
-            login_user(user)
-            flash('Login success.')
-            return redirect(url_for('main'))  # 重定向到主页
-        else:
-            flash('Invalid username or password.')
-            return redirect(url_for('login'))
-
-    return render_template('login.html')
+    return render_template('login.html', sign='')
 
 
 # --------------------
