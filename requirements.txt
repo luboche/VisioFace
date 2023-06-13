@@ -1,5 +1,8 @@
-torch~=1.9.0
-opencv-python~=4.1.0.25
-numpy~=1.18.1
-torchvision~=0.10.0
-flask~=2.2.5
+flask>=2.2.5
+werkzeug>=2.2.3
+torch>=1.9.0
+opencv-python>=4.1.0.25
+numpy>=1.18.1
+torchvision>=0.10.0
+matplotlib>=3.4.3
+filterpy>=1.4.5
